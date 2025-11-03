@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -33,6 +34,7 @@ public class ExchangeRateService {
     private String baseCurrency;
 
     @Scheduled(fixedRateString = "${exchange.fetch.rate:3600000}") // Default: every hour
+    @Transactional
     public void fetchExchangeRates() {
         log.info("Starting scheduled exchange rate fetch");
         
@@ -43,6 +45,7 @@ public class ExchangeRateService {
         }
     }
 
+    @Transactional
     private void fetchFromExchangeRatesApi() {
         try {
             String url = exchangeRatesApiUrl + "?base=" + baseCurrency;
@@ -55,6 +58,15 @@ public class ExchangeRateService {
                 LocalDateTime rateDate = response.getTimestamp() != null 
                     ? LocalDateTime.ofInstant(Instant.ofEpochSecond(response.getTimestamp()), ZoneId.systemDefault())
                     : LocalDateTime.now();
+                
+                // Check if we already have rates for this timestamp
+                List<ExchangeRate> existingRates = exchangeRateRepository.findByRateDateBetween(
+                    rateDate.minusMinutes(1), rateDate.plusMinutes(1));
+                
+                if (!existingRates.isEmpty()) {
+                    log.info("Exchange rates for timestamp {} already exist, skipping", rateDate);
+                    return;
+                }
                 
                 for (Map.Entry<String, BigDecimal> entry : response.getRates().entrySet()) {
                     ExchangeRate rate = ExchangeRate.builder()
