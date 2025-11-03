@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001" author="system">
+        <createTable tableName="exchange_rates">
+            <column name="id" type="bigserial">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="base_currency" type="varchar(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="target_currency" type="varchar(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rate" type="decimal(19,6)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rate_date" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="source" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex indexName="idx_base_target_date" tableName="exchange_rates">
+            <column name="base_currency"/>
+            <column name="target_currency"/>
+            <column name="rate_date"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
